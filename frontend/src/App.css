@@ -1,0 +1,113 @@
+.App {
+  text-align: center;
+  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+  max-width: 600px;
+  margin: auto;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+input {
+  padding: 10px;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 300px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 300px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.weather-result {
+  margin-top: 2rem;
+}
+
+.weather-result img {
+  width: 100px;
+}
+
+.error {
+  color: red;
+  margin-top: 1rem;
+}
+
+/* 🔥 Responsive enhancements */
+@media (min-width: 600px) {
+  form {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  input, button {
+    width: auto;
+  }
+}
+
+/* 🌤️ 5-Day Forecast Section */
+.forecast {
+  margin-top: 2rem;
+}
+
+.forecast-grid {
+  display: flex;
+  flex-wrap: wrap; /* allows wrapping on smaller screens */
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.forecast-card {
+  background: #f0f0f0;
+  padding: 1rem;
+  border-radius: 10px;
+  width: 130px;
+  text-align: center;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.forecast-card:hover {
+  transform: scale(1.05);
+}
+
+
+body.bg-sunny {
+  background: linear-gradient(to bottom, #87ceeb, #ffffff);
+}
+
+body.bg-cloudy {
+  background: linear-gradient(to bottom, #d3d3d3, #ffffff);
+}
+
+body.bg-rainy {
+  background: linear-gradient(to bottom, #5f9ea0, #2f4f4f);
+  color: white;
+}
+
+body.bg-snowy {
+  background: linear-gradient(to bottom, #f0f8ff, #ffffff);
+}
+
+body.bg-default {
+  background: #f9f9f9;
+}
