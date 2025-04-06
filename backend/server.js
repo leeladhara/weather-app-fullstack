@@ -4,16 +4,18 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const { Parser } = require('json2csv');
 const WeatherRecord = require('./WeatherRecord');
+require('dotenv').config(); // must be first
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // 🔌 MongoDB connection
-mongoose.connect('mongodb://localhost:27017/weatherapp', {
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => console.log("✅ MongoDB connected"))
+}).then(() => console.log("✅ MongoDB Atlas connected"))
   .catch(err => console.error("❌ MongoDB error:", err));
 
 // 🌐 Root route
@@ -24,7 +26,7 @@ app.get('/', (req, res) => {
 // 🌦️ Fetch current weather & save to DB
 app.post('/api/weather', async (req, res) => {
   const { location } = req.body;
-  const apiKey = '2510e3f053eb52c9a20aacf545dbbfb6';
+  const apiKey = process.env.OPENWEATHER_API_KEY;
 
   if (!location) return res.status(400).json({ error: 'Location is required' });
 

@@ -5,6 +5,8 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
 } from 'recharts';
 
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+
 function App() {
   const [location, setLocation] = useState('');
   const [weather, setWeather] = useState(null);
@@ -13,47 +15,41 @@ function App() {
 
   const applyWeatherTheme = (condition) => {
     const body = document.body;
-    body.className = ''; // reset
+    body.className = '';
     const theme = condition.toLowerCase();
 
-    if (theme.includes("cloud")) {
-      body.classList.add('bg-cloudy');
-    } else if (theme.includes("rain")) {
-      body.classList.add('bg-rainy');
-    } else if (theme.includes("clear")) {
-      body.classList.add('bg-sunny');
-    } else if (theme.includes("snow")) {
-      body.classList.add('bg-snowy');
-    } else {
-      body.classList.add('bg-default');
-    }
+    if (theme.includes("cloud")) body.classList.add('bg-cloudy');
+    else if (theme.includes("rain")) body.classList.add('bg-rainy');
+    else if (theme.includes("clear")) body.classList.add('bg-sunny');
+    else if (theme.includes("snow")) body.classList.add('bg-snowy');
+    else body.classList.add('bg-default');
   };
 
   const fetchWeatherData = async (loc) => {
     try {
-      const response = await fetch('http://localhost:8080/api/weather', {
+      const resWeather = await fetch(`${API_URL}/api/weather`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ location: loc })
       });
 
-      const weatherData = await response.json();
-      if (!response.ok) throw new Error(weatherData.error || 'Error fetching weather');
+      const weatherData = await resWeather.json();
+      if (!resWeather.ok) throw new Error(weatherData.error || 'Weather fetch error');
       setWeather(weatherData);
       applyWeatherTheme(weatherData.weather[0].main);
 
-      const forecastRes = await fetch('http://localhost:8080/api/forecast', {
+      const resForecast = await fetch(`${API_URL}/api/forecast`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ location: loc })
       });
 
-      const forecastData = await forecastRes.json();
-      if (!forecastRes.ok) throw new Error(forecastData.error || 'Error fetching forecast');
+      const forecastData = await resForecast.json();
+      if (!resForecast.ok) throw new Error(forecastData.error || 'Forecast fetch error');
 
-      const dailyForecast = forecastData.list.filter(item =>
-        item.dt_txt.includes("12:00:00")
-      ).slice(0, 5);
+      const dailyForecast = forecastData.list
+        .filter(item => item.dt_txt.includes("12:00:00"))
+        .slice(0, 5);
 
       setForecast(dailyForecast);
     } catch (err) {
@@ -62,7 +58,7 @@ function App() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
     setWeather(null);
@@ -72,7 +68,7 @@ function App() {
 
   const handleDetectLocation = () => {
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const coords = `${position.coords.latitude},${position.coords.longitude}`;
         setLocation(coords);
         fetchWeatherData(coords);
@@ -86,7 +82,7 @@ function App() {
 
   const handleDownloadCSV = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/history/export?format=csv');
+      const response = await fetch(`${API_URL}/api/history/export?format=csv`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
 
@@ -102,7 +98,6 @@ function App() {
     }
   };
 
-  // ⬇️ Prepare chart data
   const chartData = forecast?.map(day => ({
     date: new Date(day.dt_txt).toLocaleDateString(),
     temp: Math.round(day.main.temp)
@@ -160,10 +155,7 @@ function App() {
           {/* 📈 Temperature Line Chart */}
           <h3 style={{ marginTop: '2rem' }}>Temperature Trend</h3>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart
-              data={chartData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
+            <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis unit="°C" />
