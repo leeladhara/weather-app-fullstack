@@ -147,8 +147,9 @@ app.get('/api/history/export', async (req, res) => {
   }
 });
 
-// 🚀 Start the server
-const PORT = 8080;
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running at http://localhost:${PORT}`);
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Backend running at http://0.0.0.0:${PORT}`);
 });
+
