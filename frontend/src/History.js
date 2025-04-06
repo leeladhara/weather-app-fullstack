@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://weather-app-fullstack.onrender.com';
+
 function History() {
   const [history, setHistory] = useState([]);
   const [editId, setEditId] = useState(null);
   const [editLocation, setEditLocation] = useState('');
 
   const fetchHistory = async () => {
-    const res = await fetch('http://localhost:8080/api/history');
+    const res = await fetch(`${API_URL}/api/history`);
     const data = await res.json();
     setHistory(data);
   };
@@ -16,7 +18,7 @@ function History() {
   }, []);
 
   const handleDelete = async (id) => {
-    await fetch(`http://localhost:8080/api/history/${id}`, { method: 'DELETE' });
+    await fetch(`${API_URL}/api/history/${id}`, { method: 'DELETE' });
     fetchHistory();
   };
 
@@ -26,7 +28,7 @@ function History() {
   };
 
   const handleUpdate = async () => {
-    await fetch(`http://localhost:8080/api/history/${editId}`, {
+    await fetch(`${API_URL}/api/history/${editId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ location: editLocation })
@@ -69,10 +71,13 @@ function History() {
         </ul>
       )}
       <div style={{ marginTop: '1rem' }}>
-        <a href="http://localhost:8080/api/history/export?format=json" target="_blank" rel="noopener noreferrer">
+        <a
+          href={`${API_URL}/api/history/export?format=json`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           📥 Export as JSON
-        </a>{' '}
-        |{' '}
+        </a>
       </div>
     </div>
   );
