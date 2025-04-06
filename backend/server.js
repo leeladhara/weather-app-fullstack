@@ -4,8 +4,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const { Parser } = require('json2csv');
 const WeatherRecord = require('./WeatherRecord');
-require('dotenv').config(); // must be first
-
+require('dotenv').config(); // Must be first
 
 const app = express();
 app.use(cors());
@@ -15,25 +14,36 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => console.log("✅ MongoDB Atlas connected"))
-  .catch(err => console.error("❌ MongoDB error:", err));
+})
+  .then(() => console.log("✅ MongoDB Atlas connected"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
 
 // 🌐 Root route
 app.get('/', (req, res) => {
   res.send('🌤️ Weather Backend is up!');
 });
 
-// 🌦️ Fetch current weather & save to DB
+// 🔄 Helper function to validate coordinates
+const isValidCoordinates = (lat, lon) => {
+  return !isNaN(lat) && !isNaN(lon);
+};
+
+// 🌦️ Current weather route
 app.post('/api/weather', async (req, res) => {
   const { location } = req.body;
   const apiKey = process.env.OPENWEATHER_API_KEY;
 
-  if (!location) return res.status(400).json({ error: 'Location is required' });
+  if (!location || location.trim() === '') {
+    return res.status(400).json({ error: 'Location is required' });
+  }
 
   let url;
 
-  if (location.includes(',') && !isNaN(location.split(',')[0])) {
-    const [lat, lon] = location.split(',');
+  if (location.includes(',')) {
+    const [lat, lon] = location.split(',').map(str => str.trim());
+    if (!isValidCoordinates(lat, lon)) {
+      return res.status(400).json({ error: 'Invalid coordinates provided' });
+    }
     url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
   } else {
     url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`;
@@ -52,21 +62,26 @@ app.post('/api/weather', async (req, res) => {
     res.json(weatherData);
   } catch (err) {
     console.error('❌ Weather fetch error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch weather data. Please check city name or try again.' });
+    res.status(500).json({ error: 'Failed to fetch weather data. Please check the city name or coordinates and try again.' });
   }
 });
 
-// 📅 Fetch 5-day forecast (OpenWeatherMap)
+// 📅 5-Day forecast route
 app.post('/api/forecast', async (req, res) => {
   const { location } = req.body;
-  const apiKey = '2510e3f053eb52c9a20aacf545dbbfb6';
+  const apiKey = process.env.OPENWEATHER_API_KEY;
 
-  if (!location) return res.status(400).json({ error: 'Location is required' });
+  if (!location || location.trim() === '') {
+    return res.status(400).json({ error: 'Location is required' });
+  }
 
   let url;
 
-  if (location.includes(',') && !isNaN(location.split(',')[0])) {
-    const [lat, lon] = location.split(',');
+  if (location.includes(',')) {
+    const [lat, lon] = location.split(',').map(str => str.trim());
+    if (!isValidCoordinates(lat, lon)) {
+      return res.status(400).json({ error: 'Invalid coordinates provided' });
+    }
     url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
   } else {
     url = `https://api.openweathermap.org/data/2.5/forecast?q=${location}&appid=${apiKey}&units=metric`;
@@ -77,11 +92,11 @@ app.post('/api/forecast', async (req, res) => {
     res.json(forecastResponse.data);
   } catch (err) {
     console.error('❌ Forecast fetch error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch 5-day forecast. Please check city name or try again.' });
+    res.status(500).json({ error: 'Failed to fetch forecast. Please check the city name or coordinates and try again.' });
   }
 });
 
-// 📄 Get all saved weather history
+// 📄 Get weather history
 app.get('/api/history', async (req, res) => {
   try {
     const records = await WeatherRecord.find().sort({ date: -1 });
@@ -91,7 +106,7 @@ app.get('/api/history', async (req, res) => {
   }
 });
 
-// ✏️ Update a saved record by ID
+// ✏️ Update history record
 app.put('/api/history/:id', async (req, res) => {
   const { location } = req.body;
   try {
@@ -106,7 +121,7 @@ app.put('/api/history/:id', async (req, res) => {
   }
 });
 
-// ❌ Delete a saved record by ID
+// ❌ Delete history record
 app.delete('/api/history/:id', async (req, res) => {
   try {
     await WeatherRecord.findByIdAndDelete(req.params.id);
@@ -116,40 +131,36 @@ app.delete('/api/history/:id', async (req, res) => {
   }
 });
 
-// 📤 Export all records as JSON or CSV
+// 📤 Export history as CSV or JSON
 app.get('/api/history/export', async (req, res) => {
   try {
     const format = req.query.format || 'json';
     const records = await WeatherRecord.find();
 
     if (format === 'csv') {
-        const formattedRecords = records.map(r => ({
-            location: r.location,
-            date: new Date(r.date).toLocaleString(),
-            temp: r.weatherData?.main?.temp ?? 'N/A'
-          }));
-    
-          const fields = ['location', 'date', 'temp'];
-          const parser = new Parser({ fields });
-          const csv = parser.parse(formattedRecords);
-    
-          // ✅ Download file properly
-          res.setHeader('Content-Type', 'text/csv');
-          res.setHeader('Content-Disposition', 'attachment; filename=weather-history.csv');
-          
-      
+      const formatted = records.map(r => ({
+        location: r.location,
+        date: new Date(r.date).toLocaleString(),
+        temp: r.weatherData?.main?.temp ?? 'N/A'
+      }));
+
+      const fields = ['location', 'date', 'temp'];
+      const parser = new Parser({ fields });
+      const csv = parser.parse(formatted);
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=weather-history.csv');
       return res.send(csv);
-    } else {
-      return res.json(records);
     }
+
+    res.json(records);
   } catch (err) {
     res.status(500).json({ error: 'Failed to export data' });
   }
 });
 
+// 🚀 Start server
 const PORT = process.env.PORT || 8080;
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running at http://0.0.0.0:${PORT}`);
 });
-
