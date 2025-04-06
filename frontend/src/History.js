@@ -8,9 +8,20 @@ function History() {
   const [editLocation, setEditLocation] = useState('');
 
   const fetchHistory = async () => {
-    const res = await fetch(`${API_URL}/api/history`);
-    const data = await res.json();
-    setHistory(data);
+    try {
+      const res = await fetch(`${API_URL}/api/history`);
+      const text = await res.text();
+      console.log("📦 Raw history response:", text);
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch history');
+      }
+
+      const data = JSON.parse(text);
+      setHistory(data);
+    } catch (err) {
+      console.error("❌ Error fetching history:", err.message);
+    }
   };
 
   useEffect(() => {
@@ -18,8 +29,12 @@ function History() {
   }, []);
 
   const handleDelete = async (id) => {
-    await fetch(`${API_URL}/api/history/${id}`, { method: 'DELETE' });
-    fetchHistory();
+    try {
+      await fetch(`${API_URL}/api/history/${id}`, { method: 'DELETE' });
+      fetchHistory();
+    } catch (err) {
+      console.error("❌ Failed to delete record:", err.message);
+    }
   };
 
   const handleEdit = (record) => {
@@ -28,14 +43,18 @@ function History() {
   };
 
   const handleUpdate = async () => {
-    await fetch(`${API_URL}/api/history/${editId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ location: editLocation })
-    });
-    setEditId(null);
-    setEditLocation('');
-    fetchHistory();
+    try {
+      await fetch(`${API_URL}/api/history/${editId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location: editLocation })
+      });
+      setEditId(null);
+      setEditLocation('');
+      fetchHistory();
+    } catch (err) {
+      console.error("❌ Failed to update record:", err.message);
+    }
   };
 
   return (
