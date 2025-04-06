@@ -5,7 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
 } from 'recharts';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://weather-app-fullstack.onrender.com;
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://weather-app-fullstack.onrender.com';
 
 function App() {
   const [location, setLocation] = useState('');
