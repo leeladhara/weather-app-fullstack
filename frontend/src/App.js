@@ -27,13 +27,24 @@ function App() {
 
   const fetchWeatherData = async (loc) => {
     try {
+      setError('');
+      setWeather(null);
+      setForecast(null);
+
       const resWeather = await fetch(`${API_URL}/api/weather`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ location: loc })
       });
 
-      const weatherData = await resWeather.json();
+      const weatherText = await resWeather.text();
+      let weatherData;
+      try {
+        weatherData = JSON.parse(weatherText);
+      } catch {
+        throw new Error('Invalid response from weather API');
+      }
+
       if (!resWeather.ok) throw new Error(weatherData.error || 'Weather fetch error');
       setWeather(weatherData);
       applyWeatherTheme(weatherData.weather[0].main);
@@ -44,7 +55,14 @@ function App() {
         body: JSON.stringify({ location: loc })
       });
 
-      const forecastData = await resForecast.json();
+      const forecastText = await resForecast.text();
+      let forecastData;
+      try {
+        forecastData = JSON.parse(forecastText);
+      } catch {
+        throw new Error('Invalid response from forecast API');
+      }
+
       if (!resForecast.ok) throw new Error(forecastData.error || 'Forecast fetch error');
 
       const dailyForecast = forecastData.list
@@ -60,9 +78,6 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
-    setWeather(null);
-    setForecast(null);
     fetchWeatherData(location);
   };
 
@@ -152,7 +167,6 @@ function App() {
             ))}
           </div>
 
-          {/* 📈 Temperature Line Chart */}
           <h3 style={{ marginTop: '2rem' }}>Temperature Trend</h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
